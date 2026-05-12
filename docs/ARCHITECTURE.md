@@ -1,170 +1,190 @@
 # ARCHITECTURE.md – TradePilot Systemarchitektur
 
-**Version:** 0.1 (MVP)
+**Version:** 1.0 (MVP implementiert)
 
 ---
 
 ## Überblick
 
-TradePilot ist als **Monorepo** mit klar getrennten Schichten organisiert:
-
 ```
-Browser (Next.js) ←→ FastAPI Backend ←→ PostgreSQL
-                              ↕
-                           Redis (Cache)
-                              ↕
-                       External APIs (Marktdaten, KI)
+Browser (Next.js 16) ←─── HTTP/SSE ───→ FastAPI Backend ←──→ PostgreSQL
+                                               ↕
+                                         Redis (Rate Limit)
+                                               ↕
+                                    Anthropic Claude API (KI-Assistent)
 ```
 
 ---
 
-## Monorepo-Struktur
+## Monorepo-Struktur (Ist-Stand)
 
 ```
 tradepilot/
 ├── apps/
-│   ├── web/          # Next.js 14 Frontend (App Router)
-│   └── api/          # FastAPI Backend
-├── packages/
-│   ├── ui/           # Geteilte shadcn/ui-Komponenten
-│   ├── config/       # ESLint, TypeScript, Tailwind Configs
-│   ├── types/        # Geteilte TypeScript-Interfaces
-│   └── utils/        # Geteilte Hilfsfunktionen (Formatierung, Validierung)
-├── docs/
-├── infra/
-│   ├── docker/       # Dockerfiles
-│   └── github-actions/ # CI/CD Workflows
-└── tests/            # E2E-Tests (Playwright)
+│   ├── api/                      # FastAPI Backend
+│   │   ├── app/
+│   │   │   ├── core/
+│   │   │   │   ├── config.py     # Pydantic Settings (.env)
+│   │   │   │   ├── database.py   # AsyncSessionLocal, engine, Base
+│   │   │   │   ├── deps.py       # get_current_user, require_admin
+│   │   │   │   ├── redis.py      # Verbindungsmanagement
+│   │   │   │   ├── security.py   # JWT, bcrypt
+│   │   │   │   └── rate_limit.py # Redis-basiertes Rate Limiting
+│   │   │   ├── models/
+│   │   │   │   ├── user.py       # User, UserRole, AuditLog
+│   │   │   │   ├── watchlist.py  # WatchlistItem
+│   │   │   │   ├── portfolio.py  # Portfolio, Position, Trade
+│   │   │   │   ├── learning.py   # LearningModule, Lesson, UserLessonProgress,
+│   │   │   │   │                 # QuizQuestion, QuizAttempt, GlossaryEntry
+│   │   │   │   └── chat.py       # ChatSession, ChatMessage
+│   │   │   ├── schemas/          # Pydantic v2 Request/Response-Schemas
+│   │   │   ├── routers/
+│   │   │   │   ├── auth.py       # /auth/*
+│   │   │   │   ├── assets.py     # /assets/*
+│   │   │   │   ├── charts.py     # /assets/{symbol}/chart
+│   │   │   │   ├── watchlist.py  # /watchlist
+│   │   │   │   ├── portfolio.py  # /portfolio/*
+│   │   │   │   ├── learning.py   # /learning/*
+│   │   │   │   └── chat.py       # /chat/*
+│   │   │   ├── services/
+│   │   │   │   └── ai_client.py  # Anthropic-Stream + Fallback-Mock
+│   │   │   └── data/
+│   │   │       ├── mock_assets.py   # 40+ Mock-Assets
+│   │   │       ├── mock_ohlcv.py    # OHLCV-Zeitreihendaten
+│   │   │       └── seed_learning.py # 3 Module, 9 Lektionen, Quiz, Glossar
+│   │   ├── alembic/
+│   │   │   └── versions/
+│   │   │       ├── 0001_initial_users.py
+│   │   │       ├── 0002_watchlist.py
+│   │   │       ├── 0003_portfolio.py
+│   │   │       ├── 0004_learning.py
+│   │   │       └── 0005_chat.py
+│   │   └── tests/
+│   │       ├── conftest.py       # SQLite-Testdatenbank, Redis-Mock
+│   │       ├── test_auth.py
+│   │       ├── test_security.py
+│   │       ├── test_portfolio.py
+│   │       ├── test_watchlist.py
+│   │       ├── test_learning.py
+│   │       └── test_chat.py
+│   └── web/                      # Next.js 16 Frontend
+│       ├── src/
+│       │   ├── app/
+│       │   │   ├── (auth)/login, register, ...
+│       │   │   ├── (app)/dashboard, watchlist, chart/[symbol],
+│       │   │   │         paper-trading, learning/*, ai-assistant
+│       │   │   └── (public)/impressum, datenschutz, agb
+│       │   ├── components/ui/    # shadcn/ui-Komponenten
+│       │   └── lib/
+│       │       ├── api.ts        # axios-Instanz + Auth-Interceptor
+│       │       ├── auth-store.ts
+│       │       ├── watchlist-store.ts
+│       │       ├── portfolio-store.ts
+│       │       ├── learning-store.ts
+│       │       ├── chat-store.ts
+│       │       └── indicators.ts # SMA, EMA, RSI
+│       ├── e2e/                  # Playwright-Tests
+│       └── src/__tests__/        # Vitest-Unit-Tests
+├── tests/performance/            # Locust-Performance-Tests
+├── .github/workflows/ci.yml      # GitHub Actions
+├── docker-compose.yml
+└── docker-compose.staging.yml
 ```
 
 ---
 
-## Frontend (apps/web/)
+## Datenbankschema (Ist-Stand)
 
-**Framework:** Next.js 14 (App Router)  
-**Sprache:** TypeScript  
-**Styling:** Tailwind CSS + shadcn/ui  
-**Charts:** Recharts oder Lightweight Charts  
-**State:** React Query (Server State) + Zustand (Client State)  
-**Auth:** next-auth oder eigene JWT-Integration  
-
-### Seitenstruktur
-
-```
-app/
-├── (auth)/
-│   ├── login/
-│   └── register/
-├── (app)/
-│   ├── dashboard/
-│   ├── watchlist/
-│   ├── chart/[symbol]/
-│   ├── paper-trading/
-│   ├── learning/
-│   │   └── [module]/
-│   ├── ai-assistant/
-│   └── settings/
-└── (admin)/
-    └── admin/
-```
-
----
-
-## Backend (apps/api/)
-
-**Framework:** FastAPI  
-**Sprache:** Python 3.12+  
-**ORM:** SQLAlchemy 2.x (async)  
-**Validierung:** Pydantic v2  
-**Auth:** JWT (python-jose) + bcrypt  
-**Cache:** Redis (aioredis)  
-**DB-Migrationen:** Alembic  
-
-### Router-Struktur
-
-```
-routers/
-├── auth.py          # /auth/*
-├── users.py         # /users/*
-├── watchlists.py    # /watchlists/*
-├── assets.py        # /assets/*
-├── charts.py        # /charts/*
-├── paper_trading.py # /paper-trading/*
-├── learning.py      # /learning/*
-├── ai_chat.py       # /ai/*
-└── admin.py         # /admin/*
-```
-
----
-
-## Datenbank (PostgreSQL)
-
-### Kern-Entitäten
-
-| Tabelle | Beschreibung |
-|---|---|
-| `users` | Nutzerkonten |
-| `roles` | Rollendefinitionen (free, premium, admin) |
-| `watchlists` | Nutzerspezifische Watchlisten |
-| `watchlist_items` | Assets in einer Watchlist |
-| `assets` | Asset-Metadaten (Symbol, Name, Typ) |
-| `market_prices` | Gecachte Marktpreise |
-| `paper_portfolios` | Simuliertes Portfolio pro Nutzer |
-| `paper_trades` | Einzelne simulierte Trades |
-| `learning_modules` | Lernmodule |
-| `lessons` | Einzelne Lektionen |
-| `quizzes` | Quiz-Fragen |
-| `quiz_answers` | Mögliche Antworten |
-| `user_progress` | Lernfortschritt pro Nutzer |
-| `ai_conversations` | KI-Chat-Verlauf |
-| `audit_logs` | Sicherheits-Audit-Trail |
-
-### Konventionen
-- `id`: UUID (primärer Schlüssel)
-- `created_at`, `updated_at`: Timestamp (automatisch)
-- Soft Delete via `deleted_at` wo sinnvoll
-
----
-
-## Caching (Redis)
-
-| Key-Pattern | Inhalt | TTL |
+| Tabelle | Schlüsselfelder | Beschreibung |
 |---|---|---|
-| `asset:{symbol}:price` | Aktueller Kurs | 60s |
-| `asset:{symbol}:chart:{range}` | Chart-Daten | 5 min |
-| `session:{token}` | Nutzer-Session | 60 min |
-| `rate_limit:{ip}` | Rate-Limit-Counter | 1 min |
+| `users` | id (UUID), email, role, is_active, deleted_at | Nutzerkonten |
+| `audit_logs` | id, user_id→users, action, created_at | Sicherheits-Audit-Trail |
+| `watchlist_items` | id, user_id→users, symbol | Watchlist |
+| `portfolios` | id, user_id→users, cash_balance, initial_capital | Paper-Portfolio (1:1 pro User) |
+| `positions` | id, portfolio_id→portfolios, symbol, quantity, avg_cost | Offene Positionen |
+| `trades` | id, portfolio_id→portfolios, symbol, side, quantity, price | Trade-Journal |
+| `learning_modules` | id, title, description, order | Lernmodule |
+| `lessons` | id, module_id→modules, title, content, order | Lektionen (Markdown) |
+| `user_lesson_progress` | id, user_id→users, lesson_id→lessons | Fortschritts-Tracking |
+| `quiz_questions` | id, module_id→modules, question, options (JSON), correct_index | Quiz-Fragen |
+| `quiz_attempts` | id, user_id→users, module_id→modules, score, total | Quiz-Versuche |
+| `glossary_entries` | id, term, definition, order | Finanzglossar |
+| `chat_sessions` | id, user_id→users, title, updated_at | Chat-Unterhaltungen |
+| `chat_messages` | id, session_id→sessions, role, content | Chat-Nachrichten |
 
 ---
 
-## Externe APIs (geplant)
-
-| Service | Zweck |
-|---|---|
-| Alpha Vantage / Polygon.io | Marktdaten, Kurse, Charts |
-| OpenAI / Anthropic | KI-Assistent |
-| SendGrid / Mailgun | Transaktions-E-Mails |
-
-Im MVP können Mock-Daten verwendet werden.
-
----
-
-## Authentifizierung & Autorisierung
+## Frontend-Routing
 
 ```
-POST /auth/register → bcrypt-Hash → DB → JWT zurückgeben
-POST /auth/login    → Passwort prüfen → JWT + Refresh Token
-GET  /auth/me       → JWT validieren → Nutzer zurückgeben
-```
+/                          → Redirect → /dashboard
+/login  /register          → Öffentlich (auth)
+/impressum  /datenschutz /agb → Öffentlich (public)
 
-- Access Token: 60 Minuten
-- Refresh Token: 7 Tage (in HttpOnly Cookie)
-- Rollenprüfung als FastAPI-Dependency
+(app) – geschützt durch Middleware (JWT-Cookie):
+  /dashboard
+  /watchlist
+  /chart/[symbol]
+  /paper-trading
+  /learning
+  /learning/[moduleId]
+  /learning/[moduleId]/[lessonId]
+  /learning/[moduleId]/quiz
+  /learning/glossar
+  /ai-assistant
+```
 
 ---
 
-## Deployment (geplant)
+## Authentifizierung
 
-**Lokal:** Docker Compose (db + redis + api + web)  
-**Staging/Prod:** Docker-Container auf VPS oder Cloud-Provider  
-**CI/CD:** GitHub Actions (Lint → Test → Build → Deploy)
+```
+POST /auth/register  →  bcrypt-Hash  →  DB  →  JWT-Paar zurückgeben
+POST /auth/login     →  Passwort prüfen  →  JWT (60 min) + Refresh (7 Tage)
+GET  /auth/me        →  Bearer-Token validieren  →  User zurückgeben
+POST /auth/refresh   →  Refresh Token prüfen  →  neues JWT-Paar
+```
+
+Frontend speichert Tokens in `localStorage` und setzt `access_token` als Cookie (Middleware-Check).
+
+---
+
+## KI-Assistent (Streaming)
+
+```
+POST /chat/sessions/{id}/messages
+  → user_msg in DB speichern
+  → history aufbauen (letzte 20 Nachrichten)
+  → stream_ai_response(history) → Anthropic Claude SSE-Stream
+  → StreamingResponse (text/event-stream) an Browser
+  → nach Stream: assistant_msg in neuer DB-Session speichern
+```
+
+SSE-Datenformat:
+```
+data: {"type": "token", "content": "Hallo "}
+data: {"type": "token", "content": "Welt!"}
+data: {"type": "done"}
+```
+
+---
+
+## Rate Limiting
+
+Redis-basiert: `{endpoint}:{ip}` als Key, TTL 60 Sekunden.  
+Login: max. 5 Versuche/min. Registrierung: max. 3/min.
+
+---
+
+## CI/CD-Pipeline
+
+```
+Push → backend-lint (Ruff, mypy)
+     → backend-test (pytest, Postgres + Redis als Services)
+     → frontend-lint (tsc, eslint)
+     → frontend-test (Vitest + Coverage)
+     → frontend-build (next build)
+     → e2e (Playwright, nur main-Branch)
+```
+
+Coverage-Reports werden an Codecov hochgeladen.

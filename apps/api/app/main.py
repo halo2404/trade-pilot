@@ -5,8 +5,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
+from app.core.database import get_db
 from app.core.redis import close_redis
-from app.routers import auth
+from app.data.seed_learning import seed_learning_data
+from app.routers import assets, auth, charts, chat, learning, portfolio, watchlist
 
 ALLOWED_ORIGINS = [
     "http://localhost:3000",
@@ -16,6 +18,9 @@ ALLOWED_ORIGINS = [
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    async for db in get_db():
+        await seed_learning_data(db)
+        break
     yield
     await close_redis()
 
@@ -38,6 +43,12 @@ app.add_middleware(
 )
 
 app.include_router(auth.router)
+app.include_router(assets.router)
+app.include_router(charts.router)
+app.include_router(portfolio.router)
+app.include_router(watchlist.router)
+app.include_router(learning.router)
+app.include_router(chat.router)
 
 
 @app.get("/health", tags=["system"])

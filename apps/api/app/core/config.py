@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     ADMIN_EMAIL: str = "admin@example.com"
     ADMIN_PASSWORD: str = "changeme"
 
+    ANTHROPIC_API_KEY: str = ""
+
     @property
     def async_database_url(self) -> str:
         return self.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")

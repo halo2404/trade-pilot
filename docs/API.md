@@ -1,138 +1,177 @@
-# API.md – TradePilot API-Routen
+# API.md – TradePilot API-Referenz
 
-**Base URL:** `http://localhost:8000` (lokal)  
+**Base URL:** `http://localhost:8000`  
 **Format:** JSON  
-**Auth:** Bearer Token (JWT) im `Authorization`-Header  
+**Auth:** `Authorization: Bearer <access_token>`
 
-FastAPI generiert automatisch interaktive API-Dokumentation:
+FastAPI generiert interaktive Dokumentation (nur in development/staging):
 - Swagger UI: `http://localhost:8000/docs`
 - ReDoc: `http://localhost:8000/redoc`
 
 ---
 
-## Authentifizierung
+## Authentifizierung `/auth`
 
 | Methode | Route | Auth | Beschreibung |
 |---|---|---|---|
-| POST | `/auth/register` | Nein | Neuen Nutzer registrieren |
-| POST | `/auth/login` | Nein | Login, JWT zurückgeben |
-| POST | `/auth/logout` | Ja | Session beenden |
+| POST | `/auth/register` | Nein | Neuen Nutzer anlegen |
+| POST | `/auth/login` | Nein | Login → JWT + Refresh Token |
+| POST | `/auth/logout` | Ja | Refresh Token invalidieren |
 | GET | `/auth/me` | Ja | Eigenes Profil abrufen |
 | POST | `/auth/refresh` | Nein | Access Token erneuern |
-| POST | `/auth/forgot-password` | Nein | Passwort-Reset anfordern |
-| POST | `/auth/reset-password` | Nein | Passwort zurücksetzen |
+| POST | `/auth/forgot-password` | Nein | Reset-Link anfordern (immer 204) |
+| POST | `/auth/reset-password` | Nein | Passwort mit Token zurücksetzen |
+
+**Register-Body:**
+```json
+{ "email": "user@example.com", "password": "min8Zeichen", "full_name": "Max Muster" }
+```
+**Login-Response:**
+```json
+{ "access_token": "...", "refresh_token": "...", "token_type": "bearer" }
+```
 
 ---
 
-## Nutzer
+## Assets & Charts `/assets`
 
 | Methode | Route | Auth | Beschreibung |
 |---|---|---|---|
-| GET | `/users/me` | Ja | Eigenes Profil |
-| PATCH | `/users/me` | Ja | Profil aktualisieren |
-| DELETE | `/users/me` | Ja | Account löschen |
+| GET | `/assets/search?q={query}` | Ja | Assets suchen (Symbol, Name) |
+| GET | `/assets/{symbol}` | Ja | Asset-Details (Kurs, 24h-Änderung) |
+| GET | `/assets/{symbol}/chart?period={p}` | Ja | OHLCV-Chart-Daten |
+
+**Gültige `period`-Werte:** `1d` · `1w` · `1m` · `3m` · `1y` · `max`
+
+**Chart-Response:**
+```json
+{
+  "symbol": "AAPL",
+  "period": "1m",
+  "data": [{ "date": "2025-04-12", "open": 170.0, "high": 175.5, "low": 169.0, "close": 174.2, "volume": 52000000 }]
+}
+```
 
 ---
 
-## Watchlisten
+## Watchlist `/watchlist`
 
 | Methode | Route | Auth | Beschreibung |
 |---|---|---|---|
-| GET | `/watchlists` | Ja | Alle eigenen Watchlisten |
-| POST | `/watchlists` | Ja | Neue Watchlist erstellen |
-| GET | `/watchlists/{id}` | Ja | Einzelne Watchlist |
-| DELETE | `/watchlists/{id}` | Ja | Watchlist löschen |
-| GET | `/watchlists/{id}/items` | Ja | Assets in Watchlist |
-| POST | `/watchlists/{id}/items` | Ja | Asset hinzufügen |
-| DELETE | `/watchlists/{id}/items/{symbol}` | Ja | Asset entfernen |
+| GET | `/watchlist` | Ja | Eigene Watchlist (mit aktuellem Kurs) |
+| POST | `/watchlist` | Ja | Asset hinzufügen `{ "symbol": "AAPL" }` |
+| DELETE | `/watchlist/{symbol}` | Ja | Asset entfernen |
 
 ---
 
-## Assets & Marktdaten
+## Paper Trading `/portfolio`
 
 | Methode | Route | Auth | Beschreibung |
 |---|---|---|---|
-| GET | `/assets/search?q={query}` | Ja | Assets suchen |
-| GET | `/assets/{symbol}` | Ja | Asset-Details |
-| GET | `/assets/{symbol}/price` | Ja | Aktueller Kurs |
-| GET | `/charts/{symbol}?range={range}` | Ja | Chart-Daten (OHLCV) |
+| GET | `/portfolio` | Ja | Portfolio inkl. Positionen & P&L |
+| POST | `/portfolio/orders` | Ja | Order aufgeben |
+| GET | `/portfolio/trades` | Ja | Trade-Journal (limit/offset) |
+| DELETE | `/portfolio/reset` | Ja | Portfolio zurücksetzen |
 
-**Gültige `range`-Werte:** `1d`, `1w`, `1m`, `3m`, `1y`, `max`
+**Order-Body:**
+```json
+{ "symbol": "AAPL", "side": "buy", "quantity": 5.0 }
+```
+`side`: `"buy"` | `"sell"`
+
+**Portfolio-Response (Auszug):**
+```json
+{
+  "cash_balance": "8500.0000",
+  "total_value": 10250.0,
+  "total_pnl": 250.0,
+  "total_pnl_pct": 2.5,
+  "positions": [{ "symbol": "AAPL", "quantity": "10.0", "avg_cost": "150.0", "pnl": 250.0 }]
+}
+```
 
 ---
 
-## Paper Trading
+## Lernmodule `/learning`
 
 | Methode | Route | Auth | Beschreibung |
 |---|---|---|---|
-| GET | `/paper-trading/portfolio` | Ja | Eigenes simuliertes Portfolio |
-| POST | `/paper-trading/orders` | Ja | Order simulieren (Kauf/Verkauf) |
-| GET | `/paper-trading/trades` | Ja | Trade-Journal |
-| GET | `/paper-trading/performance` | Ja | Performance-Übersicht |
-| POST | `/paper-trading/reset` | Ja | Portfolio zurücksetzen |
-
----
-
-## Lernmodule
-
-| Methode | Route | Auth | Beschreibung |
-|---|---|---|---|
-| GET | `/learning/modules` | Nein | Alle Module |
-| GET | `/learning/modules/{id}` | Nein | Einzelnes Modul mit Lektionen |
-| GET | `/learning/modules/{id}/progress` | Ja | Eigener Fortschritt |
+| GET | `/learning/modules` | Ja | Alle Module mit Fortschritt |
+| GET | `/learning/modules/{id}` | Ja | Modul-Detail mit Lektionsliste |
+| GET | `/learning/lessons/{id}` | Ja | Lektion (inkl. Markdown-Inhalt) |
 | POST | `/learning/lessons/{id}/complete` | Ja | Lektion als abgeschlossen markieren |
-| GET | `/learning/quiz/{id}` | Ja | Quiz-Fragen |
-| POST | `/learning/quiz/{id}/submit` | Ja | Quiz einreichen |
-| GET | `/learning/glossary` | Nein | Glossar |
+| GET | `/learning/modules/{id}/quiz` | Ja | Quiz-Fragen (ohne `correct_index`) |
+| POST | `/learning/modules/{id}/quiz` | Ja | Quiz einreichen |
+| GET | `/learning/modules/{id}/quiz/attempts` | Ja | Eigene Versuche (letzte 10) |
+| GET | `/learning/glossary` | Ja | Alle Glossar-Einträge (alphabetisch) |
+
+**Quiz-Submit-Body:**
+```json
+{ "answers": [1, 0, 2] }
+```
+
+**Quiz-Result-Response (Auszug):**
+```json
+{
+  "score": 2,
+  "total": 3,
+  "passed": true,
+  "items": [{ "question": "...", "correct": true, "explanation": "..." }]
+}
+```
 
 ---
 
-## KI-Assistent
+## KI-Assistent `/chat`
 
 | Methode | Route | Auth | Beschreibung |
 |---|---|---|---|
-| POST | `/ai/chat` | Ja | Nachricht senden, Antwort erhalten |
-| GET | `/ai/conversations` | Ja | Chat-Verlauf |
-| DELETE | `/ai/conversations` | Ja | Chat-Verlauf löschen |
+| GET | `/chat/sessions` | Ja | Eigene Chat-Sessions (letzte 30) |
+| POST | `/chat/sessions` | Ja | Neue Chat-Session anlegen |
+| DELETE | `/chat/sessions/{id}` | Ja | Session löschen |
+| GET | `/chat/sessions/{id}/messages` | Ja | Nachrichten einer Session |
+| POST | `/chat/sessions/{id}/messages` | Ja | Nachricht senden → **SSE-Stream** |
 
-**Wichtig:** Jede Antwort des KI-Assistenten zu Finanzthemen enthält automatisch einen Disclaimer.
+**Nachricht senden:**
+```json
+{ "content": "Was ist ein gleitender Durchschnitt?" }
+```
+
+**Stream-Response** (`Content-Type: text/event-stream`):
+```
+data: {"type": "token", "content": "Ein "}
+data: {"type": "token", "content": "gleitender..."}
+data: {"type": "done"}
+```
+
+> Jede Antwort des KI-Assistenten enthält einen Bildungs-Disclaimer. Es werden keine Anlageempfehlungen gegeben.
 
 ---
 
-## Admin (nur `admin`-Rolle)
+## System
 
 | Methode | Route | Auth | Beschreibung |
 |---|---|---|---|
-| GET | `/admin/users` | Admin | Alle Nutzer |
-| PATCH | `/admin/users/{id}` | Admin | Nutzer aktualisieren |
-| DELETE | `/admin/users/{id}` | Admin | Nutzer sperren/löschen |
-| GET | `/admin/learning/modules` | Admin | Module verwalten |
-| POST | `/admin/learning/modules` | Admin | Modul erstellen |
-| PATCH | `/admin/learning/modules/{id}` | Admin | Modul aktualisieren |
-| GET | `/admin/status` | Admin | Systemstatus |
+| GET | `/health` | Nein | Systemstatus `{ "status": "ok", "env": "..." }` |
 
 ---
 
 ## Fehler-Format
 
 ```json
-{
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "E-Mail-Adresse ist ungültig.",
-    "details": [...]
-  }
-}
+{ "detail": "Fehlerbeschreibung als String" }
 ```
 
 | HTTP-Status | Bedeutung |
 |---|---|
 | 200 | OK |
 | 201 | Erstellt |
-| 400 | Ungültige Anfrage |
+| 204 | Kein Inhalt (Erfolg ohne Body) |
+| 400 | Ungültige Anfrage (z.B. zu wenig Kapital) |
 | 401 | Nicht authentifiziert |
 | 403 | Keine Berechtigung |
-| 404 | Nicht gefunden |
-| 422 | Validierungsfehler |
+| 404 | Ressource nicht gefunden |
+| 409 | Konflikt (z.B. Duplikat in Watchlist) |
+| 422 | Validierungsfehler (Pydantic) |
 | 429 | Rate Limit überschritten |
-| 500 | Serverfehler |
+| 500 | Interner Serverfehler |

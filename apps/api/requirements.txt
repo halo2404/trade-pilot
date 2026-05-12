@@ -20,6 +20,9 @@ redis==5.2.1
 # HTTP client (for external APIs)
 httpx==0.28.1
 
+# AI / LLM
+anthropic>=0.40.0
+
 # Email
 emails==0.6
 

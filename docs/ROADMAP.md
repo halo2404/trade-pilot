@@ -17,14 +17,14 @@
 
 **Ziel:** Lauffähiges Backend mit Authentifizierung und Datenbank.
 
-- [ ] FastAPI Projekt initialisieren (`apps/api/`)
-- [ ] PostgreSQL + SQLAlchemy + Alembic einrichten
-- [ ] Datenbank-Modelle implementieren (User, Role, ...)
-- [ ] Auth-Endpunkte: Register, Login, Logout, Me
-- [ ] JWT + Refresh Token
-- [ ] Rate Limiting (Redis)
-- [ ] Unit Tests für Auth
-- [ ] Docker: `apps/api/Dockerfile`
+- [x] FastAPI Projekt initialisieren (`apps/api/`)
+- [x] PostgreSQL + SQLAlchemy + Alembic einrichten
+- [x] Datenbank-Modelle implementieren (User, Role, ...)
+- [x] Auth-Endpunkte: Register, Login, Logout, Me
+- [x] JWT + Refresh Token
+- [x] Rate Limiting (Redis)
+- [x] Unit Tests für Auth
+- [x] Docker: `apps/api/Dockerfile`
 
 ---
 
@@ -32,99 +32,99 @@
 
 **Ziel:** Lauffähiges Frontend mit Auth-Flow und Navigation.
 
-- [ ] Next.js 14 Projekt initialisieren (`apps/web/`)
-- [ ] Tailwind CSS + shadcn/ui einrichten
-- [ ] Layout-Komponente (Navigation, Sidebar)
-- [ ] Login- und Registrierungsseite
-- [ ] Auth-Integration (JWT im Frontend)
-- [ ] Protected Routes
-- [ ] Dark Mode
-- [ ] Docker: `apps/web/Dockerfile`
+- [x] Next.js 14 Projekt initialisieren (`apps/web/`)
+- [x] Tailwind CSS + shadcn/ui einrichten
+- [x] Layout-Komponente (Navigation, Sidebar)
+- [x] Login- und Registrierungsseite
+- [x] Auth-Integration (JWT im Frontend)
+- [x] Protected Routes
+- [x] Dark Mode
+- [x] Docker: `apps/web/Dockerfile`
 
 ---
 
-## Phase 4: Watchlist & Assets
+## Phase 4: Watchlist & Assets ✅
 
 **Ziel:** Nutzer können Assets suchen und Watchlisten verwalten.
 
-- [ ] Asset-Suche (Mock-Daten)
-- [ ] Watchlist-Endpunkte (CRUD)
-- [ ] Watchlist-UI mit Kursen
-- [ ] Asset-Details-Seite
+- [x] Asset-Suche (Mock-Daten) — 40+ Assets: Aktien USA/DE, ETFs, Krypto
+- [x] Watchlist-Endpunkte (CRUD) — GET/POST/DELETE /watchlist
+- [x] Watchlist-UI mit Kursen — Suche, Tabelle, Kurs + 24h-Änderung
+- [x] Asset-Details-Seite — /chart/[symbol] mit Chart-Placeholder (Phase 5)
 
 ---
 
-## Phase 5: Charts
+## Phase 5: Charts ✅
 
 **Ziel:** Interaktive Charts für beliebige Assets.
 
-- [ ] Chart-Daten-Endpunkt (Mock-Daten)
-- [ ] Recharts / Lightweight Charts Integration
-- [ ] Zeitraum-Auswahl (1T, 1W, 1M, 3M, 1J, Max)
-- [ ] Volumenanzeige
-- [ ] Technische Indikatoren: SMA, EMA, RSI
+- [x] Chart-Daten-Endpunkt (Mock-Daten) — GET /assets/{symbol}/chart?period=
+- [x] Recharts Integration — ComposedChart mit Area/Line
+- [x] Zeitraum-Auswahl (1T, 1W, 1M, 3M, 1J, Max) — segment control in der UI
+- [x] Volumenanzeige — BarChart unterhalb des Preischarts
+- [x] Technische Indikatoren: SMA(20), EMA(20), RSI(14) — umschaltbar
 
 ---
 
-## Phase 6: Paper Trading
+## Phase 6: Paper Trading ✅
 
 **Ziel:** Nutzer können mit virtuellem Kapital handeln.
 
-- [ ] Portfolio-Modell (DB)
-- [ ] Order-Simulation (Kauf/Verkauf)
-- [ ] Trade-Journal
-- [ ] Performance-Übersicht
-- [ ] Paper-Trading-UI mit Simulation-Banner
+- [x] Portfolio-Modell (DB) — portfolios, positions, trades Tabellen (Migration 0003)
+- [x] Order-Simulation (Kauf/Verkauf) — POST /portfolio/orders mit Validierung + WACC
+- [x] Trade-Journal — GET /portfolio/trades, chronologische Übersicht
+- [x] Performance-Übersicht — Gesamtwert, Cash, P&L mit %, beste/schlechteste Position
+- [x] Paper-Trading-UI mit Simulation-Banner — Order-Form, Positionen-Tab, Journal-Tab
 
 ---
 
-## Phase 7: Lernmodule
+## Phase 7: Lernmodule ✅
 
 **Ziel:** Strukturiertes Lernsystem mit Fortschritts-Tracking und Quiz.
 
-- [ ] Lernmodul-Datenmodell
-- [ ] Admin: Module und Lektionen anlegen
-- [ ] Lernmodul-UI (Lektion, Fortschritt)
-- [ ] Quiz-System
-- [ ] Glossar
+- [x] Lernmodul-Datenmodell (learning_modules, lessons, user_lesson_progress, quiz_questions, quiz_attempts, glossary_entries)
+- [x] Admin: Seed-Daten — 3 Module à 3 Lektionen + je 3 Quiz-Fragen, 18 Glossar-Einträge (lädt beim Start automatisch)
+- [x] Lernmodul-UI (Modul-Übersicht, Lektion-Reader mit Fortschrittsbalken)
+- [x] Quiz-System (Fragen einzeln, detaillierte Auswertung, Wiederholung, Bestehen bei ≥70 %)
+- [x] Glossar (18 Begriffe, alphabetisch gruppiert, Suche)
 
 ---
 
-## Phase 8: KI-Assistent
+## Phase 8: KI-Assistent ✅
 
 **Ziel:** Nutzer können Begriffe und Charts erklären lassen.
 
-- [ ] OpenAI / Anthropic API anbinden
-- [ ] Chat-Interface
-- [ ] Sicherheitsfilter (kein Finanzrat)
-- [ ] Automatischer Disclaimer
-- [ ] Chat-Verlauf speichern
+- [x] Anthropic API anbinden (claude-haiku-4-5) — Fallback auf Mock wenn kein API-Key
+- [x] Chat-Interface mit Echtzeit-Streaming (SSE), Session-Sidebar, Vorschläge
+- [x] Sicherheitsfilter — System-Prompt verbietet Anlageempfehlungen, Prognosen, Rechts-/Steuerberatung
+- [x] Automatischer Disclaimer (UI-Banner + System-Prompt)
+- [x] Chat-Verlauf speichern (chat_sessions + chat_messages, Migration 0005)
 
 ---
 
-## Phase 9: Tests & CI/CD
+## Phase 9: Tests & CI/CD ✅
 
 **Ziel:** Stabile, automatisch getestete Codebasis.
 
-- [ ] pytest Unit Tests (Backend)
-- [ ] pytest Integration Tests (Backend)
-- [ ] Vitest Unit Tests (Frontend)
-- [ ] Playwright E2E Tests
-- [ ] GitHub Actions: Lint → Type Check → Test → Build
-- [ ] Codecoverage-Reporting
+- [x] pytest Unit Tests (Backend) — test_security.py (security/tokens)
+- [x] pytest Integration Tests (Backend) — test_auth, test_portfolio, test_watchlist, test_learning, test_chat (SQLite in-memory, Redis gemockt)
+- [x] Vitest Unit Tests (Frontend) — utils.test.ts (cn()), indicators.test.ts (SMA/EMA/RSI)
+- [x] Playwright E2E Tests — e2e/auth.spec.ts, e2e/navigation.spec.ts
+- [x] GitHub Actions: Lint (Ruff) → Type Check (mypy / tsc) → Test → Build → E2E (nur main)
+- [x] Codecoverage-Reporting via Codecov (backend lcov + frontend lcov)
 
 ---
 
-## Phase 10: Dokumentation & Go-Live-Vorbereitung
+## Phase 10: Dokumentation & Go-Live-Vorbereitung ✅
 
 **Ziel:** Alles bereit für einen öffentlichen Launch.
 
-- [ ] Alle Dokumentationsdateien aktualisieren
-- [ ] Impressum, Datenschutzerklärung, AGB
-- [ ] Rechtliche Prüfung (extern)
-- [ ] Penetrationstest (empfohlen)
-- [ ] Performance-Tests
-- [ ] Staging-Environment aufsetzen
+- [x] Alle Dokumentationsdateien aktualisiert (README, ARCHITECTURE, API)
+- [x] Impressum, Datenschutzerklärung, AGB — öffentliche Seiten unter /impressum, /datenschutz, /agb (Platzhalter, rechtliche Prüfung erforderlich)
+- [ ] Rechtliche Prüfung (extern) ⚠️ Vor Go-Live durch Anwalt prüfen lassen
+- [ ] Penetrationstest (empfohlen) ⚠️ Vor Go-Live durchführen
+- [x] Performance-Tests — Locust-Testfile mit SLA-Zielen (tests/performance/)
+- [x] Staging-Environment — docker-compose.staging.yml mit Traefik-Labels
 
 ---
 

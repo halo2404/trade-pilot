@@ -1,0 +1,45 @@
+version: "3.9"
+
+# TradePilot – Staging-Umgebung
+# Unterschiede zu docker-compose.yml:
+#   - Kein Port-Forwarding für DB/Redis (nur intern erreichbar)
+#   - APP_ENV=staging → kein /docs, kein /redoc
+#   - Traefik-Labels für HTTPS (optional)
+#
+# Verwendung:
+#   docker compose -f docker-compose.yml -f docker-compose.staging.yml up -d
+
+services:
+  db:
+    ports: []  # Nicht nach außen exponieren
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+
+  redis:
+    ports: []  # Nicht nach außen exponieren
+
+  api:
+    environment:
+      APP_ENV: staging
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET: ${JWT_SECRET}
+      APP_SECRET_KEY: ${APP_SECRET_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=Host(`api.staging.tradepilot.de`)"
+      - "traefik.http.routers.api.entrypoints=websecure"
+      - "traefik.http.routers.api.tls.certresolver=letsencrypt"
+
+  web:
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: https://api.staging.tradepilot.de
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.web.rule=Host(`staging.tradepilot.de`)"
+      - "traefik.http.routers.web.entrypoints=websecure"
+      - "traefik.http.routers.web.tls.certresolver=letsencrypt"

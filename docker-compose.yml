@@ -1,29 +1,32 @@
 version: "3.9"
 
-# TradePilot – Docker Compose (Placeholder)
-# This file defines the service topology for local development.
-# Services will be fleshed out as implementation progresses.
+# TradePilot – lokale Entwicklungsumgebung
+# Startet alle Dienste: PostgreSQL, Redis, Backend-API, Frontend
+#
+# Schnellstart:
+#   cp .env.example .env   # Werte anpassen
+#   docker compose up --build
 
 services:
-  # ─── PostgreSQL ──────────────────────────────────────────────────────────
+  # ─── PostgreSQL ───────────────────────────────────────────────────────
   db:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: tradepilot
-      POSTGRES_PASSWORD: changeme
-      POSTGRES_DB: tradepilot
+      POSTGRES_USER: ${POSTGRES_USER:-tradepilot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: ${POSTGRES_DB:-tradepilot}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U tradepilot"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-tradepilot}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # ─── Redis ───────────────────────────────────────────────────────────────
+  # ─── Redis ────────────────────────────────────────────────────────────
   redis:
     image: redis:7-alpine
     restart: unless-stopped
@@ -35,21 +38,32 @@ services:
       timeout: 5s
       retries: 5
 
-  # ─── Backend API ─────────────────────────────────────────────────────────
+  # ─── Backend API ──────────────────────────────────────────────────────
   api:
-    build: ./apps/api
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    restart: unless-stopped
     ports:
       - "8000:8000"
     env_file: .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-tradepilot}:${POSTGRES_PASSWORD:-changeme}@db:5432/${POSTGRES_DB:-tradepilot}
+      REDIS_URL: redis://redis:6379/0
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
+    command: >
+      sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
 
-  # ─── Frontend ────────────────────────────────────────────────────────────
+  # ─── Frontend ─────────────────────────────────────────────────────────
   web:
-    build: ./apps/web
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
