@@ -65,3 +65,7 @@ coverage/
 # Misc
 *.tsbuildinfo
 .turbo/
+
+# Test databases
+test.db
+*.db
