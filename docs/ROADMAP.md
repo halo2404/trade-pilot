@@ -6,7 +6,10 @@
 
 **Ziel:** Solides Repository-Fundament, klare Architektur, keine Produktivcode-Komplexität.
 
-- [x] Monorepo-Struktur anlegen
+- [x] Monorepo-Struktur anlegen (apps/, packages/, infra/, docs/)
+- [x] packages/ aufgesetzt: @tradepilot/types, @tradepilot/utils, @tradepilot/ui (Stub), @tradepilot/config
+- [x] infra/ aufgesetzt: infra/docker/, infra/github-actions/ mit reusable Workflows
+- [x] Root package.json mit npm workspaces
 - [x] Dokumentation erstellen (README, AGENTS, DESIGN, ARCHITECTURE, API, SECURITY, COMPLIANCE)
 - [x] .gitignore, .env.example, docker-compose.yml (Platzhalter)
 - [x] Git-Repository initialisieren

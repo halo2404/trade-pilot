@@ -1,0 +1,36 @@
+name: Python Setup
+
+on:
+  workflow_call:
+    inputs:
+      python-version:
+        required: false
+        type: string
+        default: "3.12"
+      working-directory:
+        required: false
+        type: string
+        default: "apps/api"
+      requirements-file:
+        required: false
+        type: string
+        default: "requirements.txt"
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}
+          cache: pip
+          cache-dependency-path: ${{ inputs.working-directory }}/${{ inputs.requirements-file }}
+
+      - name: Install dependencies
+        run: pip install -r ${{ inputs.requirements-file }}
