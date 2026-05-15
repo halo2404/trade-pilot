@@ -33,6 +33,7 @@ services:
 
   api:
     image: ghcr.io/halo2404/trade-pilot-api:latest
+    pull_policy: always
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-tradepilot}:${POSTGRES_PASSWORD:-changeme}@db:5432/${POSTGRES_DB:-tradepilot}
@@ -50,6 +51,7 @@ services:
 
   web:
     image: ghcr.io/halo2404/trade-pilot-web:latest
+    pull_policy: always
     restart: unless-stopped
     environment:
       API_URL: http://api:8000
