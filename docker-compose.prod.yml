@@ -36,7 +36,7 @@ services:
     pull_policy: always
     restart: unless-stopped
     ports:
-      - "18000:8000"
+      - "9000:9000"
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-tradepilot}:${POSTGRES_PASSWORD:-changeme}@db:5432/${POSTGRES_DB:-tradepilot}
       REDIS_URL: redis://redis:6379/0
@@ -49,16 +49,16 @@ services:
       redis:
         condition: service_healthy
     command: >
-      sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+      sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 9000"
 
   web:
     image: ghcr.io/halo2404/trade-pilot-web:latest
     pull_policy: always
     restart: unless-stopped
     ports:
-      - "13000:3000"
+      - "3000:3000"
     environment:
-      API_URL: http://api:8000
+      API_URL: http://api:9000
     depends_on:
       - api
 
