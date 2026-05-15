@@ -34,10 +34,12 @@ services:
   api:
     image: ghcr.io/halo2404/trade-pilot-api:latest
     restart: unless-stopped
-    env_file: .env
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-tradepilot}:${POSTGRES_PASSWORD:-changeme}@db:5432/${POSTGRES_DB:-tradepilot}
       REDIS_URL: redis://redis:6379/0
+      JWT_SECRET: ${JWT_SECRET}
+      APP_SECRET_KEY: ${APP_SECRET_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
     depends_on:
       db:
         condition: service_healthy
