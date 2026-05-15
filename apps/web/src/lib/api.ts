@@ -1,7 +1,9 @@
 import axios from "axios";
 
 export const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000",
+  baseURL: typeof window === "undefined"
+    ? (process.env.API_URL ?? "http://api:8000")
+    : "/backend",
   withCredentials: true,
 });
 
