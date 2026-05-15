@@ -35,8 +35,8 @@ services:
     image: ghcr.io/halo2404/trade-pilot-api:latest
     pull_policy: always
     restart: unless-stopped
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-tradepilot}:${POSTGRES_PASSWORD:-changeme}@db:5432/${POSTGRES_DB:-tradepilot}
       REDIS_URL: redis://redis:6379/0
@@ -55,8 +55,8 @@ services:
     image: ghcr.io/halo2404/trade-pilot-web:latest
     pull_policy: always
     restart: unless-stopped
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     environment:
       API_URL: http://api:8000
     depends_on:
