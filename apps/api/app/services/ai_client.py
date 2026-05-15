@@ -43,7 +43,8 @@ async def stream_ai_response(
     """Yield SSE-formatted chunks: data: {...}\\n\\n"""
 
     if not settings.ANTHROPIC_API_KEY:
-        yield from _mock_stream()
+        for chunk in _mock_stream():
+            yield chunk
         return
 
     try:
