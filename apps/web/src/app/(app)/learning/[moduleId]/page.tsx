@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { useLearningStore } from "@/lib/learning-store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
@@ -159,9 +159,12 @@ export default function ModulePage() {
                     </p>
                   </div>
                 </div>
-                <Button asChild size="sm">
-                  <Link href={`/learning/${moduleId}/quiz`}>Quiz starten</Link>
-                </Button>
+                <Link
+                  href={`/learning/${moduleId}/quiz`}
+                  className={cn(buttonVariants({ size: "sm" }))}
+                >
+                  Quiz starten
+                </Link>
               </div>
             </CardContent>
           </Card>

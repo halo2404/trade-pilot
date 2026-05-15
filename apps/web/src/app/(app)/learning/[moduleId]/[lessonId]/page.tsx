@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { useLearningStore } from "@/lib/learning-store";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 // Minimal markdown renderer — headings, bold, inline code, tables, blockquote, lists, code blocks
@@ -163,12 +163,13 @@ export default function LessonPage() {
         {/* Prev */}
         <div>
           {prevLesson && (
-            <Button variant="outline" asChild>
-              <Link href={`/learning/${moduleId}/${prevLesson.id}`}>
-                <ArrowLeft className="h-4 w-4 mr-1" />
-                Vorherige
-              </Link>
-            </Button>
+            <Link
+              href={`/learning/${moduleId}/${prevLesson.id}`}
+              className={cn(buttonVariants({ variant: "outline" }))}
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              Vorherige
+            </Link>
           )}
         </div>
 
@@ -186,12 +187,13 @@ export default function LessonPage() {
             </Button>
           )}
           {nextLesson ? (
-            <Button asChild>
-              <Link href={`/learning/${moduleId}/${nextLesson.id}`}>
-                Weiter
-                <ArrowRight className="h-4 w-4 ml-1" />
-              </Link>
-            </Button>
+            <Link
+              href={`/learning/${moduleId}/${nextLesson.id}`}
+              className={cn(buttonVariants({ variant: "default" }))}
+            >
+              Weiter
+              <ArrowRight className="h-4 w-4 ml-1" />
+            </Link>
           ) : (
             <Button
               variant="default"

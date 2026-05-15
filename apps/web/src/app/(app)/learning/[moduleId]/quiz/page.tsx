@@ -13,7 +13,7 @@ import {
 import { useLearningStore } from "@/lib/learning-store";
 import type { QuizResult } from "@/lib/learning-types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 type Phase = "intro" | "quiz" | "result";
@@ -291,12 +291,13 @@ export default function QuizPage() {
             <RefreshCw className="h-4 w-4" />
             Nochmals versuchen
           </Button>
-          <Button asChild>
-            <Link href={`/learning/${moduleId}`}>
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              Zurück zum Modul
-            </Link>
-          </Button>
+          <Link
+            href={`/learning/${moduleId}`}
+            className={cn(buttonVariants({ variant: "default" }))}
+          >
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            Zurück zum Modul
+          </Link>
         </div>
       </div>
     );
